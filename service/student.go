@@ -25,7 +25,17 @@ func NewStudentService(repo repository.StudentRepositoryInterface) *StudentServi
 
 // GetAll returns all students
 func (s *StudentService) GetAll() ([]model.Student, error) {
-	return s.repo.GetAll()
+	// return s.repo.GetAll()
+	students, err := s.repo.GetAll()
+
+	if err != nil {
+		return nil, err
+	}
+	if students == nil {
+		return []model.Student{}, nil // memastikan tdk return nil slice
+	}
+
+	return students, nil
 }
 
 // GetByID returns a student by id

@@ -23,6 +23,7 @@ func (r *StudentRepository) GetAll() ([]model.Student, error) {
 	if err := utils.ReadJSON(r.FilePath, &students); err != nil {
 		return nil, err
 	}
+
 	return students, nil
 }
 
