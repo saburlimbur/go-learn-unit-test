@@ -1,6 +1,7 @@
 package service
 
 import (
+	"errors"
 	"session-9/model"
 	"session-9/repository"
 	"session-9/utils"
@@ -17,6 +18,68 @@ func newTestService() (*StudentService, *repository.MockStudentRepository) {
 }
 
 // ======= BY ID FOUND
+func TestStudentService_Create_Success_File_err(t *testing.T) {
+	svc, repo := newTestService()
+
+	// existing := []model.Student{
+	// 	{ID: 3, Name: "Andi", Age: 21},
+	// 	{ID: 5, Name: "Siti", Age: 22},
+	// }
+
+	repo.On("GetAll").Return([]model.Student{}, utils.ErrFile).Once()
+	// repo.On("SaveAll").Return(nil).Once()
+
+	input := model.Student{
+		Name: "Budi",
+		Age:  20,
+	}
+
+	_, err := svc.Create(input)
+
+	assert.Error(t, err)
+	// assert.Equal(t, 6, created.ID)
+	// assert.Equal(t, "Budi", created.Name)
+	assert.Equal(t, utils.ErrFile, err)
+
+	repo.AssertExpectations(t)
+}
+
+func TestStudentService_Create_Error_SaveAll(t *testing.T) {
+	svc, repo := newTestService()
+
+	existing := []model.Student{
+		{ID: 1, Name: "Andi", Age: 21},
+	}
+
+	repo.
+		On("GetAll").
+		Return(existing, nil).
+		Once()
+
+	appendData := []model.Student{
+		{ID: 1, Name: "Andi", Age: 21},
+		{ID: 2, Name: "Budi", Age: 20},
+	}
+
+	repo.
+		On("SaveAll", appendData).
+		Return(errors.New("save error")).
+		Once()
+
+	input := model.Student{
+		Name: "Budi",
+		Age:  20,
+	}
+
+	created, err := svc.Create(input)
+
+	assert.Error(t, err)
+	assert.EqualError(t, err, "save error")
+	assert.Equal(t, model.Student{}, created)
+
+	repo.AssertExpectations(t)
+}
+
 func TestStudentService_GetByID_Found(t *testing.T) {
 	initial := []model.Student{
 		{ID: 1, Name: "Andi", Age: 21},
@@ -49,6 +112,8 @@ func TestStudentService_GetByID_NotFound(t *testing.T) {
 
 	repo.On("GetAll").Return(initial, nil).Once()
 
+	repo.On("GetAll").Return(initial, nil).Once()
+
 	st, err := svc.GetByID(999)
 
 	assert.Nil(t, st)
@@ -73,17 +138,96 @@ func TestStudentService_GetByID_fileError(t *testing.T) {
 	repo.AssertExpectations(t)
 }
 
-// ======= CREATE STUDENT
-func TestStudentService_Create(t *testing.T) {
-	// data awal existing students
-	service := []model.Student{
-		{ID: 1, Name: "Joko", Age: 28},
-		{ID: 2, Name: "Joko", Age: 28},
+// sub test
+func TestStudentService_Update(t *testing.T) {
+	svc, repo := newTestService()
+
+	existing := []model.Student{
+		{ID: 1, Name: "Andi", Age: 21},
+		{ID: 2, Name: "Budi", Age: 20},
 	}
 
-	createStudent := model.Student{
-		Name: "Rahman",
+	input := model.Student{
+		Name: "Budi Dermawan",
 		Age:  20,
+	}
+
+	t.Run("student file error", func(t *testing.T) {
+		repo.
+			On("GetAll").
+			Return([]model.Student{}, utils.ErrFile).
+			Once()
+
+		created, err := svc.Update(2, input)
+
+		assert.Error(t, err)
+		assert.EqualError(t, err, "file error")
+		assert.Equal(t, model.Student{}, created)
+
+		repo.AssertExpectations(t)
+	})
+
+	t.Run("student not found", func(t *testing.T) {
+		repo.
+			On("GetAll").
+			Return(existing, nil).
+			Once()
+
+		created, err := svc.Update(3, input)
+
+		assert.Error(t, err)
+		assert.EqualError(t, err, "student not found")
+		assert.Equal(t, model.Student{}, created)
+
+		repo.AssertExpectations(t)
+	})
+
+}
+
+// table test
+func TestStudentService_Delete(t *testing.T) {
+	svc, repo := newTestService()
+
+	tests := []struct {
+		name         string
+		paramID      int
+		existingData []model.Student
+		errGet       error
+		messageError string
+	}{
+		{
+			name:         "file error",
+			paramID:      1,
+			existingData: []model.Student{},
+			errGet:       utils.ErrFile,
+			messageError: "file error",
+		},
+		{
+			name:    "not found",
+			paramID: 3,
+			existingData: []model.Student{
+				{ID: 1, Name: "Andi", Age: 21},
+				{ID: 2, Name: "Budi", Age: 20},
+			},
+			errGet:       utils.ErrNotFound,
+			messageError: "student not found",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			repo.
+				On("GetAll").
+				Return(tt.existingData, tt.errGet).
+				Once()
+
+			err := svc.Delete(tt.paramID)
+
+			assert.Error(t, err)
+			assert.EqualError(t, err, tt.messageError)
+
+			repo.AssertExpectations(t)
+		})
 	}
 
 	// result student after auto-increment ID

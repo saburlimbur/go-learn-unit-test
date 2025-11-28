@@ -3,23 +3,15 @@ package handler
 import (
 	"fmt"
 	"session-9/model"
+	"session-9/service"
 	"strings"
 )
 
-// StudentService interface used by CLI handler
-type StudentService interface {
-	GetAll() ([]model.Student, error)
-	GetByID(id int) (*model.Student, error)
-	Create(student model.Student) (model.Student, error)
-	Update(id int, student model.Student) (model.Student, error)
-	Delete(id int) error
-}
-
 type StudentHandler struct {
-	Svc StudentService
+	Svc service.StudentServiceInterface
 }
 
-func NewStudentHandler(svc StudentService) *StudentHandler {
+func NewStudentHandler(svc service.StudentServiceInterface) *StudentHandler {
 	return &StudentHandler{Svc: svc}
 }
 
