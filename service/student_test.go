@@ -112,8 +112,6 @@ func TestStudentService_GetByID_NotFound(t *testing.T) {
 
 	repo.On("GetAll").Return(initial, nil).Once()
 
-	repo.On("GetAll").Return(initial, nil).Once()
-
 	st, err := svc.GetByID(999)
 
 	assert.Nil(t, st)
@@ -184,7 +182,7 @@ func TestStudentService_Update(t *testing.T) {
 
 }
 
-// table test
+// ======= TABLE TEST DELETE
 func TestStudentService_Delete(t *testing.T) {
 	svc, repo := newTestService()
 
@@ -229,28 +227,6 @@ func TestStudentService_Delete(t *testing.T) {
 			repo.AssertExpectations(t)
 		})
 	}
-
-	// result student after auto-increment ID
-	expectedResult := model.Student{
-		ID:   3,
-		Name: "Rahman",
-		Age:  20,
-	}
-	// service + mock repository
-	svc, repo := newTestService()
-
-	repo.On("GetAll").Return(service, nil).Once()
-
-	// return nil setelah berhasil di tambah
-	repo.On("SaveAll", mock.Anything).Return(nil).Once()
-
-	result, err := svc.Create(createStudent)
-
-	assert.NoError(t, err)
-	assert.Equal(t, expectedResult, result)
-
-	// semua mock terpenuhi
-	repo.AssertExpectations(t)
 }
 
 // ======= UPDATED STUDENT
