@@ -216,6 +216,7 @@ func TestStudentService_GetByID_FileError(t *testing.T) {
 	assert.Equal(t, utils.ErrFile, err)
 }
 
+// sub test
 func TestStudentService_Update(t *testing.T) {
 	svc, repo := newTestService()
 
@@ -259,4 +260,51 @@ func TestStudentService_Update(t *testing.T) {
 		repo.AssertExpectations(t)
 	})
 
+}
+
+// table test
+func TestStudentService_Delete(t *testing.T) {
+	svc, repo := newTestService()
+
+	tests := []struct {
+		name         string
+		paramID      int
+		existingData []model.Student
+		errGet       error
+		messageError string
+	}{
+		{
+			name:         "file error",
+			paramID:      1,
+			existingData: []model.Student{},
+			errGet:       utils.ErrFile,
+			messageError: "file error",
+		},
+		{
+			name:    "not found",
+			paramID: 3,
+			existingData: []model.Student{
+				{ID: 1, Name: "Andi", Age: 21},
+				{ID: 2, Name: "Budi", Age: 20},
+			},
+			errGet:       utils.ErrNotFound,
+			messageError: "student not found",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			repo.
+				On("GetAll").
+				Return(tt.existingData, tt.errGet).
+				Once()
+
+			err := svc.Delete(tt.paramID)
+
+			assert.Error(t, err)
+			assert.EqualError(t, err, tt.messageError)
+
+			repo.AssertExpectations(t)
+		})
+	}
 }
